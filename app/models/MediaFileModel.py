@@ -1,7 +1,7 @@
 import os
 import json
 
-from config import DATA_DIR
+from app.config import DATA_DIR
 
 
 class MediaFileModel:

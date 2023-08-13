@@ -5,7 +5,7 @@ from app.MediaConverter import MediaConverter
 from app.models.MediaFileModel import MediaFileModel
 from app.WhisperTranscriber import WhisperTranscriber
 from app.models.UserModel import UserModel
-from config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS
+from app.config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS
 
 
 class TelegramService:
