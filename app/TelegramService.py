@@ -89,11 +89,12 @@ class TelegramService:
             await main_reply.edit_text(f"Error downloading file: {e}")
             return
 
-        # Can we send it right away to Whisper?
         original_file_location = media_file.get_original_file_location()
-        if WhisperTranscriber.validate_file(original_file_location):
-            await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
-            return
+
+        # Can we send it right away to Whisper?
+        # if WhisperTranscriber.validate_file(original_file_location):
+        #     await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
+        #     return
 
         # If not, let's try to convert it to mp3 and check it again
         if not WhisperTranscriber.is_file_supported(original_file_location):
