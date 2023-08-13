@@ -5,7 +5,7 @@ from app.MediaConverter import MediaConverter
 from app.models.MediaFileModel import MediaFileModel
 from app.WhisperTranscriber import WhisperTranscriber
 from app.models.UserModel import UserModel
-from config import TELEGRAM_MAX_MESSAGE_LENGTH
+from config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS
 
 
 class TelegramService:
@@ -13,27 +13,46 @@ class TelegramService:
         self.application = application
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_message = update.message
+        user_id = user_message.from_user.id if user_message.from_user is not None else "0"
+        chat_id = user_message.chat.id
 
-        user_id = update.effective_user.id if update.effective_user is not None else "0"
-        chat_id = update.effective_chat.id
+        # check ALLOWED_TELEGRAM_CHAT_IDS
+        if chat_id not in ALLOWED_TELEGRAM_CHAT_IDS:
+            reply = f"This bot is limited to certain chats only.\n" \
+                    f"Please ask the admin to add this chat ID to the list: {chat_id}"
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=reply,
+                reply_to_message_id=user_message.message_id
+            )
+            return
 
-        if update.message.audio is not None:
-            file_id = update.message.audio.file_id
+        if user_message.audio is not None:
+            file_id = user_message.audio.file_id
             file_type = "audio"
-        elif update.message.voice is not None:
-            file_id = update.message.voice.file_id
+        elif user_message.voice is not None:
+            file_id = user_message.voice.file_id
             file_type = "voice"
-        elif update.message.video is not None:
-            file_id = update.message.video.file_id
+        elif user_message.video is not None:
+            file_id = user_message.video.file_id
             file_type = "video"
         else:
             reply = "If you send me audio, voice or video, i'll transcribe it."
-            await context.bot.send_message(chat_id=chat_id, text=reply)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=reply,
+                reply_to_message_id=user_message.message_id
+            )
             return
 
         # Check permissions
         message_text = f"Checking permissions..."
-        main_reply = await context.bot.send_message(chat_id=chat_id, text=message_text)
+        main_reply = await context.bot.send_message(
+            chat_id=chat_id,
+            text=message_text,
+            reply_to_message_id=user_message.message_id
+        )
         user_model = UserModel(user_id)
         user_model.save_user_info(update.effective_user)
 
@@ -42,7 +61,7 @@ class TelegramService:
         await main_reply.edit_text(message_text)
 
         try:
-            media_file = MediaFileModel(user_id, update.message.message_id)
+            media_file = MediaFileModel(user_id, user_message.message_id)
             file = await self.application.bot.get_file(file_id)
             file_extension = file.file_path.split(".")[-1]
             file_contents = await file.download_as_bytearray()
@@ -54,7 +73,7 @@ class TelegramService:
         # Can we send it right away to Whisper?
         original_file_location = media_file.get_original_file_location()
         if WhisperTranscriber.validate_file(original_file_location):
-            await self.handle_simple_audio(original_file_location, main_reply, media_file)
+            await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
             return
 
         # If not, let's try to convert it to mp3 and check it again
@@ -64,7 +83,7 @@ class TelegramService:
             MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
 
             if WhisperTranscriber.validate_file(mp3_file_location):
-                await self.handle_simple_audio(mp3_file_location, main_reply, media_file)
+                await self.handle_simple_audio(mp3_file_location, main_reply, user_message, media_file)
                 return
 
         # Well, at this point let's split it into chunks
@@ -77,7 +96,7 @@ class TelegramService:
         chunks_found = len(chunks)
 
         if chunks_found == 1:
-            await self.handle_simple_audio(original_file_location, main_reply, media_file)
+            await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
             return
         else:
             await main_reply.edit_text("Splitting audio in chunks...")
@@ -98,22 +117,25 @@ class TelegramService:
 
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=transcription)
+                    text=transcription
+                )
 
     @staticmethod
-    async def handle_simple_audio(original_file_location: str, main_reply: Message, media_file: MediaFileModel):
-        await main_reply.edit_text("Transcribing audio...")
+    async def handle_simple_audio(original_file_location: str, reply_message: Message, user_message: Message,
+                                  media_file: MediaFileModel):
+        await reply_message.edit_text("Transcribing audio...")
         transcription = WhisperTranscriber.transcribe_audio(original_file_location)
         media_file.save_transcription(transcription)
 
         if len(transcription) > TELEGRAM_MAX_MESSAGE_LENGTH:
-            await main_reply.edit_text("Your transcription is ready:")
-            await main_reply.reply_document(
+            await reply_message.edit_text("Your transcription is ready:")
+            await reply_message.reply_document(
                 document=open(media_file.get_transcription_location(), 'rb'),
-                caption=transcription[:300] + "..."
+                caption=transcription[:300] + "...",
+                reply_to_message_id=user_message.message_id
             )
         else:
-            await main_reply.edit_text(transcription)
+            await reply_message.edit_text(transcription)
 
     def setup(self):
         audio_handler = MessageHandler(~filters.COMMAND, self.message)
