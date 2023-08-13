@@ -15,8 +15,6 @@ if __name__ == '__main__':
     TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
     application = ApplicationBuilder().token(TELEGRAM_API_TOKEN).build()
 
-    application.bot.logOut()
-
     telegram_service = TelegramService(application)
     telegram_service.setup()
 
