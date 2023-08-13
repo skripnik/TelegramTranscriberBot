@@ -99,7 +99,11 @@ class TelegramService:
         if not WhisperTranscriber.is_file_supported(original_file_location):
             await main_reply.edit_text("Converting audio...")
             mp3_file_location = media_file.get_mp3_location()
-            MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
+            try:
+                MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
+            except Exception as e:
+                await main_reply.edit_text(f"Error converting file: {e}")
+                return
 
             if WhisperTranscriber.validate_file(mp3_file_location):
                 await self.handle_simple_audio(mp3_file_location, main_reply, user_message, media_file)
@@ -107,10 +111,19 @@ class TelegramService:
 
         # Well, at this point let's split it into chunks
         pcm_wav_file_location = media_file.get_pcm_wav_location()
-        MediaConverter.convert_to_pcm_wav(original_file_location, pcm_wav_file_location)
+        try:
+            MediaConverter.convert_to_pcm_wav(original_file_location, pcm_wav_file_location)
+        except Exception as e:
+            await main_reply.edit_text(f"Error converting file: {e}")
+            return
 
         await main_reply.edit_text("Detecting speech...")
-        silero_timestamps = ChunkProcessor.detect_timestamps(pcm_wav_file_location)
+        try:
+            silero_timestamps = ChunkProcessor.detect_timestamps(pcm_wav_file_location)
+        except Exception as e:
+            await main_reply.edit_text(f"Error detecting speech: {e}")
+            return
+
         chunks = ChunkProcessor.calculate_chunks(silero_timestamps)
         chunks_found = len(chunks)
 
@@ -121,13 +134,22 @@ class TelegramService:
             transcriptions = []
 
             await main_reply.edit_text("Splitting audio in chunks...")
-            ChunkProcessor.split_audio_into_chunks(chunks, media_file)
+            try:
+                ChunkProcessor.split_audio_into_chunks(chunks, media_file)
+            except Exception as e:
+                await main_reply.edit_text(f"Error splitting audio: {e}")
+                return
 
             for i in range(chunks_found):
                 await main_reply.edit_text(f"Transcribing chunk {i + 1} of {chunks_found}...")
 
                 chunk_path = media_file.get_chunk_location(i)
-                transcription = WhisperTranscriber.transcribe_audio(chunk_path)
+                try:
+                    transcription = WhisperTranscriber.transcribe_audio(chunk_path)
+                except Exception as e:
+                    await main_reply.edit_text(f"Error transcribing chunk {i + 1} of {chunks_found}: {e}")
+                    return
+
                 transcriptions.append(transcription)
 
                 with open(chunk_path, 'rb') as audio:
@@ -153,7 +175,12 @@ class TelegramService:
     async def handle_simple_audio(original_file_location: str, reply_message: Message, user_message: Message,
                                   media_file: MediaFileModel):
         await reply_message.edit_text("Transcribing audio...")
-        transcription = WhisperTranscriber.transcribe_audio(original_file_location)
+        try:
+            transcription = WhisperTranscriber.transcribe_audio(original_file_location)
+        except Exception as e:
+            await reply_message.edit_text(f"Error transcribing audio: {e}")
+            return
+
         media_file.save_transcription(transcription)
 
         if len(transcription) > TELEGRAM_MAX_MESSAGE_LENGTH:
