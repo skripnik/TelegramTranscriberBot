@@ -27,10 +27,10 @@ class WhisperTranscriber:
     @classmethod
     def validate_file(cls, audio_file_path) -> bool:
         if not cls.is_file_supported(audio_file_path):
-            print(f"The file extension '{os.path.splitext(audio_file_path)[1]}' is not supported.")
+            # print(f"The file extension '{os.path.splitext(audio_file_path)[1]}' is not supported.")
             return False
         if not cls.is_file_size_acceptable(audio_file_path):
-            print(f"The provided file '{audio_file_path}' is too large (> {cls.MAX_FILE_SIZE_MB}MB).")
+            # print(f"The provided file '{audio_file_path}' is too large (> {cls.MAX_FILE_SIZE_MB}MB).")
             return False
         return True
 

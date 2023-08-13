@@ -83,7 +83,9 @@ class TelegramService:
             media_file = MediaFileModel(user_id, user_message.message_id)
             file = await self.application.bot.get_file(file_id)
             file_extension = file.file_path.split(".")[-1]
-            file_contents = await file.download_as_bytearray()
+            file_contents = await file.download_as_bytearray(
+                read_timeout=30, write_timeout=30, connect_timeout=30, pool_timeout=30
+            )
             media_file.save_user_media(file_contents, file_extension)
         except Exception as e:
             await main_reply.edit_text(f"Error downloading file: {e}")
