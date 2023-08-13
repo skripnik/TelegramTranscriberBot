@@ -1,6 +1,6 @@
 import ffmpeg
 
-from app.config import WAV_SAMPLING_RATE
+from config import WAV_SAMPLING_RATE
 
 
 class MediaConverter:

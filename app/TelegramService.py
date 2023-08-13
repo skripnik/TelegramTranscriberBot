@@ -1,11 +1,11 @@
 from telegram import Update, Message
 from telegram.ext import MessageHandler, filters, ContextTypes, CommandHandler
-from app.ChunkProcessor import ChunkProcessor
-from app.MediaConverter import MediaConverter
-from app.models.MediaFileModel import MediaFileModel
-from app.WhisperTranscriber import WhisperTranscriber
-from app.models.UserModel import UserModel
-from app.config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS
+from ChunkProcessor import ChunkProcessor
+from MediaConverter import MediaConverter
+from models.MediaFileModel import MediaFileModel
+from WhisperTranscriber import WhisperTranscriber
+from models.UserModel import UserModel
+from config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS
 
 
 class TelegramService:

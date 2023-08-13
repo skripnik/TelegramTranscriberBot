@@ -1,8 +1,8 @@
 import ffmpeg
 import torch
 
-from app.models.MediaFileModel import MediaFileModel
-from app.config import WAV_SAMPLING_RATE, MAX_CHUNK_DURATION_S, MIN_CHUNK_DURATION_S
+from models.MediaFileModel import MediaFileModel
+from config import WAV_SAMPLING_RATE, MAX_CHUNK_DURATION_S, MIN_CHUNK_DURATION_S
 
 
 class ChunkProcessor:

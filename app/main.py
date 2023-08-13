@@ -1,7 +1,7 @@
 import logging
 import os
 from telegram.ext import ApplicationBuilder
-from app.TelegramService import TelegramService
+from TelegramService import TelegramService
 from dotenv import load_dotenv
 
 if __name__ == '__main__':
