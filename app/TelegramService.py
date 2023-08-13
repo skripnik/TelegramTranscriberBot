@@ -93,23 +93,23 @@ class TelegramService:
 
         original_file_location = media_file.get_original_file_location()
 
-        # # Can we send it right away to Whisper?
-        # if WhisperTranscriber.validate_file(original_file_location):
-        #     await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
-        #     return
-        #
-        # # If not, let's try to convert it to mp3 and check it again
-        # await main_reply.edit_text("Converting audio...")
-        # mp3_file_location = media_file.get_mp3_location()
-        # try:
-        #     MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
-        # except Exception as e:
-        #     await main_reply.edit_text(f"Error converting file: {e}")
-        #     return
-        #
-        # if WhisperTranscriber.validate_file(mp3_file_location):
-        #     await self.handle_simple_audio(mp3_file_location, main_reply, user_message, media_file)
-        #     return
+        # Can we send it right away to Whisper?
+        if WhisperTranscriber.validate_file(original_file_location):
+            await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
+            return
+
+        # If not, let's try to convert it to mp3 and check it again
+        await main_reply.edit_text("Converting audio...")
+        mp3_file_location = media_file.get_mp3_location()
+        try:
+            MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
+        except Exception as e:
+            await main_reply.edit_text(f"Error converting file: {e}")
+            return
+
+        if WhisperTranscriber.validate_file(mp3_file_location):
+            await self.handle_simple_audio(mp3_file_location, main_reply, user_message, media_file)
+            return
 
         # Well, at this point let's split it into chunks
         pcm_wav_file_location = media_file.get_pcm_wav_location()
