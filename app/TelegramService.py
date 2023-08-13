@@ -1,5 +1,5 @@
 from telegram import Update, Message
-from telegram.ext import MessageHandler, filters, ContextTypes
+from telegram.ext import MessageHandler, filters, ContextTypes, CommandHandler
 from app.ChunkProcessor import ChunkProcessor
 from app.MediaConverter import MediaConverter
 from app.models.MediaFileModel import MediaFileModel
@@ -11,6 +11,13 @@ from config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS
 class TelegramService:
     def __init__(self, application):
         self.application = application
+
+    @staticmethod
+    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_first_name = update.effective_user.first_name
+        start_message = f"Hello, {user_first_name}!\n" \
+                        f"Send me an audio, voice or video and I'll transcribe it for you."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=start_message)
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_message = update.message
@@ -37,8 +44,20 @@ class TelegramService:
         elif user_message.video is not None:
             file_id = user_message.video.file_id
             file_type = "video"
+        elif user_message.video_note is not None:
+            file_id = user_message.video_note.file_id
+            file_type = "video note"
+        elif user_message.forward_from_message_id is not None and user_message.forward_from_chat is not None:
+            reply = "I don't know how to work with forwarded messages yet."
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=reply,
+                reply_to_message_id=user_message.message_id
+            )
+            return
         else:
-            reply = "If you send me audio, voice or video, i'll transcribe it."
+            reply = "I don't recognize this media type.\n" \
+                    "If you send me audio, voice or video, i'll transcribe it."
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=reply,
@@ -99,6 +118,8 @@ class TelegramService:
             await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
             return
         else:
+            transcriptions = []
+
             await main_reply.edit_text("Splitting audio in chunks...")
             ChunkProcessor.split_audio_into_chunks(chunks, media_file)
 
@@ -107,6 +128,7 @@ class TelegramService:
 
                 chunk_path = media_file.get_chunk_location(i)
                 transcription = WhisperTranscriber.transcribe_audio(chunk_path)
+                transcriptions.append(transcription)
 
                 with open(chunk_path, 'rb') as audio:
                     await context.bot.send_audio(
@@ -119,6 +141,13 @@ class TelegramService:
                     chat_id=update.effective_chat.id,
                     text=transcription
                 )
+
+            transcription = "\n\n".join(transcriptions)
+            await main_reply.reply_document(
+                document=open(media_file.get_transcription_location(), 'rb'),
+                caption=transcription[:300] + "...",
+                reply_to_message_id=user_message.message_id
+            )
 
     @staticmethod
     async def handle_simple_audio(original_file_location: str, reply_message: Message, user_message: Message,
@@ -138,6 +167,9 @@ class TelegramService:
             await reply_message.edit_text(transcription)
 
     def setup(self):
+        start_handler = CommandHandler('start', self.start)
+        self.application.add_handler(start_handler)
+
         audio_handler = MessageHandler(~filters.COMMAND, self.message)
         self.application.add_handler(audio_handler)
 
