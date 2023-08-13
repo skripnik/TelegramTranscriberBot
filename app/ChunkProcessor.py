@@ -1,27 +1,11 @@
-import os
 import ffmpeg
 import torch
 
 from app.models.MediaFileModel import MediaFileModel
-from config import DATA_DIR, WAV_SAMPLING_RATE, MAX_CHUNK_DURATION_S, MIN_CHUNK_DURATION_S
+from config import WAV_SAMPLING_RATE, MAX_CHUNK_DURATION_S, MIN_CHUNK_DURATION_S
 
 
 class ChunkProcessor:
-
-    def __init__(self, input_file, file_id):
-        self.input_file = input_file
-        self.file_id = file_id
-        self.audio_dir = f"{DATA_DIR}/converted_files/{self.file_id}"
-        self.wav_file = f"{self.audio_dir}/whole.wav"
-        self.mp3_file = f"{self.audio_dir}/whole.mp3"
-        self.file_duration = None
-        self.silero_timestamps = None
-        self.chunks = None
-        self.audacity_speech_labels = f"{self.audio_dir}/audacity_speech.txt"
-        self.audacity_chunk_labels = f"{self.audio_dir}/audacity_chunks.txt"
-
-        if not os.path.exists(self.audio_dir):
-            os.makedirs(self.audio_dir)
 
     @staticmethod
     def detect_timestamps(pcm_wav_file) -> list:

@@ -1,0 +1,9 @@
+python-dotenv
+python-telegram-bot
+ffmpeg-python
+torch
+torchaudio
+numpy
+onnxruntime
+ffmpeg
+openai
