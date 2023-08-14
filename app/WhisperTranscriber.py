@@ -1,3 +1,5 @@
+import time
+
 import openai
 import os
 from dotenv import load_dotenv
@@ -13,6 +15,8 @@ openai.api_key = OPENAI_API_KEY
 class WhisperTranscriber:
     SUPPORTED_EXTENSIONS = [".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm"]
     MAX_FILE_SIZE_MB = 25
+    MAX_RETRIES = 3
+    RETRY_DELAY = 1  # Delay in seconds
 
     @classmethod
     def is_file_extension_supported(cls, audio_file_path) -> bool:
@@ -40,8 +44,14 @@ class WhisperTranscriber:
             raise Exception("The provided file is not valid.")
 
         with open(audio_file_path, "rb") as audio_file:
-            try:
-                response = openai.Audio.transcribe("whisper-1", audio_file)
-                return response['text']
-            except Exception as e:
-                raise Exception(f"An exception occurred while trying to transcribe the audio: {e}")
+            for attempt in range(WhisperTranscriber.MAX_RETRIES):
+                try:
+                    response = openai.Audio.transcribe("whisper-1", audio_file)
+                    return response['text']
+                except openai.error.APIError as e:
+                    if e.http_status == 502 and attempt < WhisperTranscriber.MAX_RETRIES - 1:
+                        time.sleep(WhisperTranscriber.RETRY_DELAY)
+                        continue
+                    else:
+                        print(e)
+                        raise Exception(f"An exception occurred while trying to transcribe the audio: {e}")
