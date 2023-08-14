@@ -1,12 +1,12 @@
 from telegram import Update, Message
 from telegram.ext import MessageHandler, filters, ContextTypes, CommandHandler
+from telegram.constants import MessageLimit
 from ChunkProcessor import ChunkProcessor
 from MediaConverter import MediaConverter
 from models.MediaFileModel import MediaFileModel
 from WhisperTranscriber import WhisperTranscriber
 from models.UserModel import UserModel
-from config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, \
-    MAX_CHUNK_DURATION_S
+from config import ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, MAX_CHUNK_DURATION_S
 
 
 class TelegramService:
@@ -177,16 +177,18 @@ class TelegramService:
                     transcriptions.append(transcription)
 
                     with open(chunk_path, 'rb') as audio:
-                        chunk_audio_message = await context.bot.send_audio(
+                        await context.bot.send_audio(
                             chat_id=update.effective_chat.id,
                             audio=audio,
-                            title=f"Part {i + 1} of {chunks_found}"
+                            title=f"Part {i + 1} of {chunks_found}",
+                            performer=None,
+                            disable_notification=True,
                         )
 
                     await context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=transcription,
-                        # reply_to_message_id=chunk_audio_message.message_id
+                        disable_notification=True,
                     )
 
             full_transcription = "\n\n".join(transcriptions)
@@ -210,7 +212,7 @@ class TelegramService:
 
         media_file.save_transcription(transcription)
 
-        if len(transcription) > TELEGRAM_MAX_MESSAGE_LENGTH:
+        if len(transcription) > MessageLimit.MAX_TEXT_LENGTH:
             await reply_message.edit_text("Your transcription is ready:")
             await reply_message.reply_document(
                 document=open(media_file.transcription_file, 'rb'),
