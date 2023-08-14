@@ -13,7 +13,12 @@ if __name__ == '__main__':
     load_dotenv()
 
     TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
-    application = ApplicationBuilder().token(TELEGRAM_API_TOKEN).build()
+    application = (
+        ApplicationBuilder()
+           .token(TELEGRAM_API_TOKEN)
+           .base_url("http://127.0.0.1:8081/bot")
+           .local_mode(local_mode=True)
+           .build())
 
     telegram_service = TelegramService(application)
     telegram_service.setup()
