@@ -86,7 +86,10 @@ class TelegramService:
         await main_reply.edit_text(f"Downloading {media_file.original_file_type}...")
 
         try:
-            file = await self.application.bot.get_file(media_file.original_file_id)
+            file = await self.application.bot.get_file(
+                file_id=media_file.original_file_id,
+                read_timeout=30
+            )
         except Exception as e:
             await main_reply.edit_text(f"Error getting file info:\n{e}\n\nFile ID:\n{media_file.original_file_id}")
             return
@@ -174,7 +177,7 @@ class TelegramService:
                     transcriptions.append(transcription)
 
                     with open(chunk_path, 'rb') as audio:
-                        await context.bot.send_audio(
+                        chunk_audio_message = await context.bot.send_audio(
                             chat_id=update.effective_chat.id,
                             audio=audio,
                             title=f"Part {i + 1} of {chunks_found}"
@@ -182,7 +185,8 @@ class TelegramService:
 
                     await context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text=transcription
+                        text=transcription,
+                        # reply_to_message_id=chunk_audio_message.message_id
                     )
 
             full_transcription = "\n\n".join(transcriptions)
