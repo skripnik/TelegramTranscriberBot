@@ -131,7 +131,7 @@ class TelegramService:
                 return
 
         # Well, at this point let's split it into chunks
-        await main_reply.edit_text("Converting audio to WAV PCM...")
+        await main_reply.edit_text("Converting audio to WAV (PCM)...")
         pcm_wav_file_location = media_file.pcm_wav_file
 
         try:
