@@ -86,8 +86,7 @@ class ChunkProcessor:
                 ffmpeg.input(input_file).output(
                     output_file_name,
                     ss=ss,
-                    t=duration,
-                    c='copy'
+                    t=duration
                 ).run(overwrite_output=True)
 
                 print(f"Chunk {i} has been created and saved as {output_file_name}")
