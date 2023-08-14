@@ -1,19 +1,13 @@
-import logging
 import os
-from telegram.ext import ApplicationBuilder
-from TelegramService import TelegramService
+
 from dotenv import load_dotenv
+from telegram.ext import ApplicationBuilder, Application
 
 from app.config import TELEGRAM_BASE_URL, TELEGRAM_BASE_FILE_URL
 
-if __name__ == '__main__':
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO
-    )
 
+def test_local_telegram_server():
     load_dotenv()
-
     TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
 
     application_builder = ApplicationBuilder()
@@ -23,7 +17,4 @@ if __name__ == '__main__':
     application_builder.local_mode(True)
     application = application_builder.build()
 
-    telegram_service = TelegramService(application)
-    telegram_service.setup()
-
-    application.run_polling()
+    assert isinstance(application, Application)
