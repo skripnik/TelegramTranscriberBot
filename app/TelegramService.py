@@ -5,7 +5,8 @@ from MediaConverter import MediaConverter
 from models.MediaFileModel import MediaFileModel
 from WhisperTranscriber import WhisperTranscriber
 from models.UserModel import UserModel
-from config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS
+from config import TELEGRAM_MAX_MESSAGE_LENGTH, ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, \
+    MAX_CHUNK_DURATION_S
 
 
 class TelegramService:
@@ -24,6 +25,8 @@ class TelegramService:
         user_id = user_message.from_user.id if user_message.from_user is not None else "0"
         chat_id = user_message.chat.id
 
+        media_file = MediaFileModel(user_id, user_message.message_id)
+
         # check ALLOWED_TELEGRAM_CHAT_IDS
         if chat_id not in ALLOWED_TELEGRAM_CHAT_IDS:
             reply = f"This bot is limited to certain chats only.\n" \
@@ -36,17 +39,21 @@ class TelegramService:
             return
 
         if user_message.audio is not None:
-            file_id = user_message.audio.file_id
-            file_type = "audio"
+            media_file.original_file_id = user_message.audio.file_id
+            media_file.original_file_duration_s = user_message.audio.duration
+            media_file.original_file_type = "audio"
         elif user_message.voice is not None:
-            file_id = user_message.voice.file_id
-            file_type = "voice"
+            media_file.original_file_id = user_message.voice.file_id
+            media_file.original_file_duration_s = user_message.voice.duration
+            media_file.original_file_type = "voice"
         elif user_message.video is not None:
-            file_id = user_message.video.file_id
-            file_type = "video"
+            media_file.original_file_id = user_message.video.file_id
+            media_file.original_file_duration_s = user_message.video.duration
+            media_file.original_file_type = "video"
         elif user_message.video_note is not None:
-            file_id = user_message.video_note.file_id
-            file_type = "video note"
+            media_file.original_file_id = user_message.video_note.file_id
+            media_file.original_file_duration_s = user_message.video_note.duration
+            media_file.original_file_type = "video note"
         elif user_message.forward_from_message_id is not None and user_message.forward_from_chat is not None:
             reply = "I don't know how to work with forwarded messages yet."
             await context.bot.send_message(
@@ -76,43 +83,54 @@ class TelegramService:
         user_model.save_user_info(update.effective_user)
 
         # Download the file
-        message_text = f"Downloading {file_type}..."
-        await main_reply.edit_text(message_text)
+        await main_reply.edit_text(f"Downloading {media_file.original_file_type}...")
 
         try:
-            media_file = MediaFileModel(user_id, user_message.message_id)
-            file = await self.application.bot.get_file(file_id)
-            file_extension = file.file_path.split(".")[-1]
-            file_contents = await file.download_as_bytearray(
-                read_timeout=30, write_timeout=30, connect_timeout=30, pool_timeout=30
-            )
-            media_file.save_user_media(file_contents, file_extension)
+            file = await self.application.bot.get_file(media_file.original_file_id)
         except Exception as e:
-            await main_reply.edit_text(f"Error downloading file: {e}")
+            await main_reply.edit_text(f"Error getting file info:\n{e}\n\nFile ID:\n{media_file.original_file_id}")
             return
 
-        original_file_location = media_file.get_original_file_location()
-
-        # Can we send it right away to Whisper?
-        if WhisperTranscriber.validate_file(original_file_location):
-            await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
-            return
-
-        # If not, let's try to convert it to mp3 and check it again
-        await main_reply.edit_text("Converting audio...")
-        mp3_file_location = media_file.get_mp3_location()
         try:
-            MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
+            file_contents = await file.download_as_bytearray()
         except Exception as e:
-            await main_reply.edit_text(f"Error converting file: {e}")
+            await main_reply.edit_text(f"Error downloading file:\n{e}\n\nFile ID:\n{media_file.original_file_id}")
             return
 
-        if WhisperTranscriber.validate_file(mp3_file_location):
-            await self.handle_simple_audio(mp3_file_location, main_reply, user_message, media_file)
+        media_file.original_file_extension = file.file_path.split(".")[-1]
+
+        try:
+            media_file.save_user_media(file_contents)
+        except Exception as e:
+            await main_reply.edit_text(f"Error saving file: {e}")
             return
+
+        original_file_location = media_file.original_file_location
+
+        if media_file.original_file_duration_s <= MAX_CHUNK_DURATION_S:
+            # Can we send it right away to Whisper?
+            if WhisperTranscriber.validate_file(original_file_location):
+                await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
+                return
+
+            # If not, let's try to convert it to mp3 and check it again
+            await main_reply.edit_text("Converting audio to MP3...")
+            mp3_file_location = media_file.mp3_file
+
+            try:
+                MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
+            except Exception as e:
+                await main_reply.edit_text(f"Error converting file: {e}")
+                return
+
+            if WhisperTranscriber.validate_file(mp3_file_location):
+                await self.handle_simple_audio(mp3_file_location, main_reply, user_message, media_file)
+                return
 
         # Well, at this point let's split it into chunks
-        pcm_wav_file_location = media_file.get_pcm_wav_location()
+        await main_reply.edit_text("Converting audio to WAV PCM...")
+        pcm_wav_file_location = media_file.pcm_wav_file
+
         try:
             MediaConverter.convert_to_pcm_wav(original_file_location, pcm_wav_file_location)
         except Exception as e:
@@ -152,24 +170,27 @@ class TelegramService:
                     await main_reply.edit_text(f"Error transcribing chunk {i + 1} of {chunks_found}: {e}")
                     return
 
-                transcriptions.append(transcription)
+                if transcription != "":
+                    transcriptions.append(transcription)
 
-                with open(chunk_path, 'rb') as audio:
-                    await context.bot.send_audio(
+                    with open(chunk_path, 'rb') as audio:
+                        await context.bot.send_audio(
+                            chat_id=update.effective_chat.id,
+                            audio=audio,
+                            title=f"Part {i + 1} of {chunks_found}"
+                        )
+
+                    await context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        audio=audio,
-                        title=f"Part {i + 1} of {chunks_found}"
+                        text=transcription
                     )
 
-                await context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=transcription
-                )
+            full_transcription = "\n\n".join(transcriptions)
+            media_file.save_transcription(full_transcription)
 
-            transcription = "\n\n".join(transcriptions)
             await main_reply.reply_document(
-                document=open(media_file.get_transcription_location(), 'rb'),
-                caption=transcription[:300] + "...",
+                document=open(media_file.transcription_file, 'rb'),
+                caption=full_transcription[:TRANSCRIPTION_PREVIEW_CHARS] + "...",
                 reply_to_message_id=user_message.message_id
             )
 
@@ -188,8 +209,8 @@ class TelegramService:
         if len(transcription) > TELEGRAM_MAX_MESSAGE_LENGTH:
             await reply_message.edit_text("Your transcription is ready:")
             await reply_message.reply_document(
-                document=open(media_file.get_transcription_location(), 'rb'),
-                caption=transcription[:300] + "...",
+                document=open(media_file.transcription_file, 'rb'),
+                caption=transcription[:TRANSCRIPTION_PREVIEW_CHARS] + "...",
                 reply_to_message_id=user_message.message_id
             )
         else:

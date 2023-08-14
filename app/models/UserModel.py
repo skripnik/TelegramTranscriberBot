@@ -3,7 +3,7 @@ import os
 
 from telegram import User
 
-from config import DATA_DIR
+from app.config import DATA_DIR
 
 
 class UserModel:

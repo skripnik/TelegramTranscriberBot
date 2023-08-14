@@ -1,3 +1,6 @@
-.env
-.idea
-data
+/.env
+/.idea
+/data/
+/telegram-bot-api/
+/telegram-bot-api-data/
+/telegram-bot-api-temp/

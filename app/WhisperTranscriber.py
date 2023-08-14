@@ -15,7 +15,7 @@ class WhisperTranscriber:
     MAX_FILE_SIZE_MB = 25
 
     @classmethod
-    def is_file_supported(cls, audio_file_path) -> bool:
+    def is_file_extension_supported(cls, audio_file_path) -> bool:
         _, file_ext = os.path.splitext(audio_file_path)
         return file_ext in cls.SUPPORTED_EXTENSIONS
 
@@ -26,7 +26,7 @@ class WhisperTranscriber:
 
     @classmethod
     def validate_file(cls, audio_file_path) -> bool:
-        if not cls.is_file_supported(audio_file_path):
+        if not cls.is_file_extension_supported(audio_file_path):
             # print(f"The file extension '{os.path.splitext(audio_file_path)[1]}' is not supported.")
             return False
         if not cls.is_file_size_acceptable(audio_file_path):

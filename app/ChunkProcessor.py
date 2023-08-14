@@ -74,7 +74,7 @@ class ChunkProcessor:
 
     @staticmethod
     def split_audio_into_chunks(chunks: list, media_file: MediaFileModel):
-        input_file = media_file.get_original_file_location()
+        input_file = media_file.original_file_location
         for i, chunk in enumerate(chunks):
             output_file_name = media_file.get_chunk_location(i)
             ss = chunk[0]  # start time of the chunk, in seconds
