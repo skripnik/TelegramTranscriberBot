@@ -1,5 +1,6 @@
 import os
 import json
+from jinja2 import Environment, FileSystemLoader
 
 from app.config import DATA_DIR
 
@@ -17,7 +18,7 @@ class MediaFileModel:
         self.audacity_speech_labels = f"{self.folder}/audacity_speech.txt"
         self.audacity_chunk_labels = f"{self.folder}/audacity_chunks.txt"
         self.silero_timestamps_json = f"{self.folder}/silero_timestamps.json"
-        self.transcription_file = f"{self.folder}/transcription.txt"
+        self.transcription_file = f"{self.folder}/transcription.html"
 
     def save_user_media(self, file_contents: bytearray):
         self.original_file_location = f"{self.folder}/original"
@@ -68,6 +69,13 @@ class MediaFileModel:
         with open(self.audacity_chunk_labels, "w") as file:
             file.write("\n".join(formatted_lines))
 
-    def save_transcription(self, transcription: str):
+    def save_transcription(self, paragraphs: list):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        view_path = os.path.join(dir_path, '..', 'views')
+        env = Environment(loader=FileSystemLoader(view_path))
+        template = env.get_template('transcription_template.html')
+
+        rendered_template = template.render(paragraphs=paragraphs)
+
         with open(self.transcription_file, "w") as file:
-            file.write(transcription)
+            file.write(rendered_template)

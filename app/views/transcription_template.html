@@ -1,0 +1,28 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Transcription</title>
+    <style>
+        body {
+            font-size: 14px;
+            line-height: 20px;
+        }
+
+        ol {
+            max-width: 50em;
+            margin: 0 auto;
+        }
+
+        ol li {
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+<body>
+<ol>
+    {% for paragraph in paragraphs %}
+    <li>{{ paragraph }}</li>
+    {% endfor %}
+</ol>
+</body>
+</html>

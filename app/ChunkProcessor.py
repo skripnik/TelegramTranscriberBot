@@ -34,10 +34,9 @@ class ChunkProcessor:
         return silero_timestamps
 
     @staticmethod
-    def calculate_chunks(silero_timestamps: list) -> list:
+    def calculate_chunks(silero_timestamps: list, audio_duration_s: int) -> list:
         chunks = []
         start = 0.0
-        audio_duration_s = silero_timestamps[-1]['end']
 
         if audio_duration_s <= MAX_CHUNK_DURATION_S:
             return [[start, audio_duration_s]]
@@ -74,7 +73,8 @@ class ChunkProcessor:
 
     @staticmethod
     def split_audio_into_chunks(chunks: list, media_file: MediaFileModel):
-        input_file = media_file.original_file_location
+        input_file = media_file.pcm_wav_file
+
         for i, chunk in enumerate(chunks):
             output_file_name = media_file.get_chunk_location(i)
             ss = chunk[0]  # start time of the chunk, in seconds

@@ -86,10 +86,7 @@ class TelegramService:
         await main_reply.edit_text(f"Downloading {media_file.original_file_type}...")
 
         try:
-            file = await self.application.bot.get_file(
-                file_id=media_file.original_file_id,
-                read_timeout=30
-            )
+            file = await self.application.bot.get_file(media_file.original_file_id)
         except Exception as e:
             await main_reply.edit_text(f"Error getting file info:\n{e}\n\nFile ID:\n{media_file.original_file_id}")
             return
@@ -147,7 +144,7 @@ class TelegramService:
             await main_reply.edit_text(f"Error detecting speech: {e}")
             return
 
-        chunks = ChunkProcessor.calculate_chunks(silero_timestamps)
+        chunks = ChunkProcessor.calculate_chunks(silero_timestamps, media_file.original_file_duration_s)
         chunks_found = len(chunks)
 
         if chunks_found == 1:
@@ -156,47 +153,47 @@ class TelegramService:
         else:
             transcriptions = []
 
-            await main_reply.edit_text("Splitting audio in chunks...")
+            await main_reply.edit_text(f"Splitting audio in {chunks_found} chunks...")
             try:
                 ChunkProcessor.split_audio_into_chunks(chunks, media_file)
             except Exception as e:
                 await main_reply.edit_text(f"Error splitting audio: {e}")
                 return
 
-            for i in range(chunks_found):
-                await main_reply.edit_text(f"Transcribing chunk {i + 1} of {chunks_found}...")
+            await main_reply.edit_text(f"Transcribing {chunks_found} chunks:")
 
+            for i in range(chunks_found):
                 chunk_path = media_file.get_chunk_location(i)
+                with open(chunk_path, 'rb') as audio:
+                    await context.bot.send_audio(
+                        chat_id=chat_id,
+                        audio=audio,
+                        title=f"Chunk {i + 1} of {chunks_found}",
+                        performer="Transcription",
+                        disable_notification=True,
+                        write_timeout=60
+                    )
+
+                chunk_message = await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"Transcribing chunk {i + 1} of {chunks_found}...",
+                    disable_notification=True,
+                )
+
                 try:
                     transcription = WhisperTranscriber.transcribe_audio(chunk_path)
                 except Exception as e:
-                    await main_reply.edit_text(f"Error transcribing chunk {i + 1} of {chunks_found}: {e}")
+                    await chunk_message.edit_text(f"Error transcribing chunk {i + 1} of {chunks_found}: {e}")
                     return
 
-                if transcription != "":
-                    transcriptions.append(transcription)
+                transcriptions.append(transcription)
+                await chunk_message.edit_text(transcription)
 
-                    with open(chunk_path, 'rb') as audio:
-                        await context.bot.send_audio(
-                            chat_id=update.effective_chat.id,
-                            audio=audio,
-                            title=f"Part {i + 1} of {chunks_found}",
-                            performer=None,
-                            disable_notification=True,
-                        )
-
-                    await context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=transcription,
-                        disable_notification=True,
-                    )
-
-            full_transcription = "\n\n".join(transcriptions)
-            media_file.save_transcription(full_transcription)
+            media_file.save_transcription(transcriptions)
 
             await main_reply.reply_document(
                 document=open(media_file.transcription_file, 'rb'),
-                caption=full_transcription[:TRANSCRIPTION_PREVIEW_CHARS] + "...",
+                caption=transcriptions[0][:TRANSCRIPTION_PREVIEW_CHARS] + "...",
                 reply_to_message_id=user_message.message_id
             )
 
@@ -210,7 +207,7 @@ class TelegramService:
             await reply_message.edit_text(f"Error transcribing audio: {e}")
             return
 
-        media_file.save_transcription(transcription)
+        media_file.save_transcription([transcription])
 
         if len(transcription) > MessageLimit.MAX_TEXT_LENGTH:
             await reply_message.edit_text("Your transcription is ready:")
