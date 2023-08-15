@@ -6,7 +6,7 @@ from MediaConverter import MediaConverter
 from models.MediaFileModel import MediaFileModel
 from WhisperTranscriber import WhisperTranscriber
 from models.UserModel import UserModel
-from config import ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, MAX_CHUNK_DURATION_S
+from config import ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, MAX_CHUNK_DURATION_S, DATA_DIR
 
 
 class TelegramService:
@@ -25,7 +25,7 @@ class TelegramService:
         user_id = user_message.from_user.id if user_message.from_user is not None else "0"
         chat_id = user_message.chat.id
 
-        media_file = MediaFileModel(user_id, user_message.message_id)
+        media_file = MediaFileModel(user_id, user_message.message_id, DATA_DIR)
 
         # check ALLOWED_TELEGRAM_CHAT_IDS
         if chat_id not in ALLOWED_TELEGRAM_CHAT_IDS:
@@ -79,7 +79,7 @@ class TelegramService:
             text=message_text,
             reply_to_message_id=user_message.message_id
         )
-        user_model = UserModel(user_id)
+        user_model = UserModel(user_id, DATA_DIR)
         user_model.save_user_info(update.effective_user)
 
         # Download the file

@@ -2,12 +2,10 @@ import os
 import json
 from jinja2 import Environment, FileSystemLoader
 
-from app.config import DATA_DIR
-
 
 class MediaFileModel:
-    def __init__(self, user_id, message_id):
-        self.folder = f"{DATA_DIR}/{user_id}/{message_id}"
+    def __init__(self, user_id, message_id, data_dir: str):
+        self.folder = f"{data_dir}/{user_id}/{message_id}"
         self.original_file_id = None
         self.original_file_type = None
         self.original_file_duration_s = None

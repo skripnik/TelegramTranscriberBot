@@ -3,12 +3,9 @@ import os
 
 from telegram import User
 
-from app.config import DATA_DIR
-
-
 class UserModel:
-    def __init__(self, user_id):
-        self.folder = f"{DATA_DIR}/{user_id}"
+    def __init__(self, user_id, data_dir: str):
+        self.folder = f"{data_dir}/{user_id}"
         self.user_info_file = f"{self.folder}/user_info.json"
 
     def create_folder(self):
