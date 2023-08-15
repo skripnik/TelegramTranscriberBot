@@ -2,7 +2,7 @@ import os
 import json
 from jinja2 import Environment, FileSystemLoader
 
-from app.config import DATA_DIR
+from config import DATA_DIR
 
 
 class MediaFileModel:

@@ -4,7 +4,7 @@ from telegram.ext import ApplicationBuilder, AIORateLimiter
 from TelegramService import TelegramService
 from dotenv import load_dotenv
 
-from app.config import TELEGRAM_BASE_URL, TELEGRAM_BASE_FILE_URL
+from config import TELEGRAM_BASE_URL, TELEGRAM_BASE_FILE_URL
 
 if __name__ == '__main__':
     logging.basicConfig(
