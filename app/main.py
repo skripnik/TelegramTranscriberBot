@@ -20,7 +20,9 @@ if __name__ == '__main__':
         overall_max_rate=30,
         overall_time_period=1,
         group_max_rate=20,
-        group_time_period=60)
+        group_time_period=60,
+        max_retries=3,
+    )
 
     application_builder = ApplicationBuilder()
     application_builder.token(TELEGRAM_API_TOKEN)
