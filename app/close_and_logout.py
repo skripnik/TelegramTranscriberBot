@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from TelegramService import TelegramService
 
@@ -9,6 +10,4 @@ if __name__ == '__main__':
 
     telegram_service = TelegramService()
     telegram_service.build_app(True)
-    telegram_service.setup()
-    telegram_service.run_polling()
-
+    asyncio.run(telegram_service.close_and_log_out())
