@@ -1,25 +1,31 @@
-## Installation
+# Installation
 
-You will need a server with root access. Code samples are for Ubuntu. On different systems, you may need to use
-different commands.
+You will need a server with root access. For the installation process, it's recommended to resize your server to at
+least 4GB RAM and 2 CPUs. The higher the configuration, the faster the installation can be completed. After
+installation, you can resize the server back to the original configuration.
 
-Update the system
+The code samples provided are for Ubuntu. Please take note that different systems may require different commands.
+
+**1. Update the System**
 
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
 ```
 
-Copy this repository
+**2. Clone the Repository**
 
 ```bash
 git clone https://github.com/skripnik/TelegramTranscriberBot.git
 cd TelegramTranscriberBot
 ```
 
-Install [Telegram Bot Server](https://github.com/tdlib/telegram-bot-api) in TelegramTranscriberBot. For the actual code
-use [Server build instructions generator](https://tdlib.github.io/telegram-bot-api/build.html). Building requires abot
-4GB of RAM and it can take up to 1 hour.
+**3. Install [Telegram Bot Server](https://github.com/tdlib/telegram-bot-api)**
+
+We assume that the server code will be installed in the TelegramTranscriberBot project folder.
+
+Please refer to the [Server build instructions generator](https://tdlib.github.io/telegram-bot-api/build.html) for
+actual code. Building requires about 4GB of RAM and may take up to 1 hour.
 
 ```bash
 sudo apt-get install make git zlib1g-dev libssl-dev gperf cmake g++
@@ -34,63 +40,71 @@ cd ../..
 ls -l telegram-bot-api/bin/telegram-bot-api*
 ```
 
-Install [FFMPEG](https://www.ffmpeg.org/)
+**4. Install [FFMPEG](https://www.ffmpeg.org/)**
 
 ```bash
 sudo apt install ffmpeg
 ```
 
-Get required access keys:
+**5. Obtain Required Access Keys:**
 
-- Register a Telegram Bot using [@BotFather](https://t.me/botfather) and get the Telegram Bot Token
-- Create a Telegram app and get api_id and api_hash ([Tutorial](https://core.telegram.org/api/obtaining_api_id))
-- Register in OpenAI Platform
-  and [get the OpenAI API Key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key)
+- Register your Telegram Bot using [@BotFather](https://t.me/botfather), get the `api_token` and disable the bot privacy mode.
+- Create a Telegram app to obtain your `api_id` and `api_hash`. Here's a
+  useful [Tutorial](https://core.telegram.org/api/obtaining_api_id) for that.
+- Register on OpenAI Platform to get
+  the [OpenAI API Key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key).
 
-Create a .env file in TelegramTranscriberBot fodler, add the following variables (don't forget to replace the values
-with your own):
+**6. Configure `.env` file**
+
+Create a .env file in the TelegramTranscriberBot folder and add the following variables. Remember to replace the
+placeholders with your own values:
 
 ```bash
 cat <<EOF > .env
-TELEGRAM_API_TOKEN="*********:***********************"
-TELEGRAM_API_ID="*********"
-TELEGRAM_API_HASH="********************************"
-OPENAI_API_KEY="sk-***************************"
+TELEGRAM_API_TOKEN="your_telegram_bot_token"
+TELEGRAM_API_ID="your_api_id"
+TELEGRAM_API_HASH="your_api_hash"
+OPENAI_API_KEY="your_openai_api_key"
 EOF
 ```
 
-Change users or groups that can use the bot in app/config.py. To get the user_id, ask that user to write something to
-the bot and the bot will reply with ID. The same with chats: you need to add the bot to the chat and then the bot will
-reply with chat_id.
-Example:
+**7. Update user permissions**
+
+Update the list of users and groups that can use the bot in `app/config.py`. To obtain the `user_id`, have the user
+message the bot, and the bot will reply with the ID. Do the same with chats, by adding the bot to the chat as
+administrator, write something, and it will reply with the chat_id. Here's an example:
 
 ```python 
 ALLOWED_TELEGRAM_CHAT_IDS = [
-    80660384,  # @skrpnk
+    -1111111111111,
 ]
 ```
 
-Run the server (server will continuously run in the background, so you might need to open another console to run other
-commands):
+**8. Start the Server**
+
+Run the server using the following command. Note that the server will run continuously in the background. You might need
+to open another console for running additional commands:
 
 ```bash
 bash start_telegram_server.sh
 ```
 
-Install Python, pip and dependencies:
+**9. Install Python, pip and Required Dependencies**
 
 ```bash
 sudo apt install python3 python3-pip
 pip install -r requirements.txt
 ```
 
-Run the bot:
+**10. Run the Bot**
 
 ```bash
 python3 app/main.py
 ```
 
 ## Updates
+
+Navigate to the TelegramTranscriberBot directory and pull any recent updates from the repository:
 
 ```bash
 cd TelegramTranscriberBot
