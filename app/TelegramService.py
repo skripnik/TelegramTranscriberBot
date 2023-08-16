@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from telegram import Update, Message, User
-from telegram.error import BadRequest
+from telegram.error import BadRequest, TelegramError
 from telegram.ext import MessageHandler, filters, ContextTypes, CommandHandler, AIORateLimiter, ApplicationBuilder
 from telegram.constants import MessageLimit
 from ChunkProcessor import ChunkProcessor
@@ -10,8 +10,9 @@ from MediaConverter import MediaConverter
 from models.MediaFileModel import MediaFileModel
 from WhisperTranscriber import WhisperTranscriber
 from models.UserModel import UserModel
-from config import ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, MAX_CHUNK_DURATION_S, DATA_DIR, \
-    TELEGRAM_BASE_URL, TELEGRAM_BASE_FILE_URL
+from config import TRANSCRIPTION_PREVIEW_CHARS, MAX_CHUNK_DURATION_S, DATA_DIR, TELEGRAM_BASE_URL, \
+    TELEGRAM_BASE_FILE_URL, ALLOWED_TELEGRAM_CHAT_IDS, MEMBER_LIST_CACHE_TIME_SECONDS
+from cachetools import TTLCache
 
 
 class TelegramService:
@@ -19,6 +20,7 @@ class TelegramService:
         load_dotenv()
         self.TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
         self.application = None
+        self.allowed_user_ids = TTLCache(maxsize=10000, ttl=MEMBER_LIST_CACHE_TIME_SECONDS)
 
     def build_app(self, local_mode: bool):
         application_builder = ApplicationBuilder()
@@ -63,7 +65,7 @@ class TelegramService:
         elif user is None:
             return False
         else:
-            raise Exception("An error occurred while trying to get the bot's user.")
+            raise Exception("An error occurred while trying to get the bots user.")
 
     async def log_out_if_logged_in(self):
         logged_in = await self.check_if_logged_in()
@@ -92,24 +94,61 @@ class TelegramService:
                         f"Send me an audio, voice or video and I'll transcribe it for you."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=start_message)
 
+    async def is_user_in_chat(self, user_id: int, chat_id: int) -> bool:
+        if self.allowed_user_ids.get(user_id) is None:
+            try:
+                chat_member = await self.application.bot.get_chat_member(chat_id, user_id)
+            except TelegramError:
+                return False
+
+            if chat_member.status in ["creator", "administrator", "member"]:
+                self.allowed_user_ids[user_id] = True
+                return True
+            else:
+                return False
+        else:
+            return True
+
+    async def is_this_chat_allowed(self, user_id: int, chat_id: int) -> bool:
+        if chat_id in ALLOWED_TELEGRAM_CHAT_IDS:
+            return True
+        elif chat_id == user_id:
+            for allowed_chat_id in ALLOWED_TELEGRAM_CHAT_IDS:
+                is_user_in_chat = await self.is_user_in_chat(user_id, allowed_chat_id)
+                if is_user_in_chat:
+                    return True
+
+        return False
+
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_message = update.message
         user_id = user_message.from_user.id if user_message.from_user is not None else "0"
         chat_id = user_message.chat.id
 
-        media_file = MediaFileModel(user_id, user_message.message_id, DATA_DIR)
+        # Check permissions
+        main_reply = await context.bot.send_message(
+            chat_id=chat_id,
+            text=f"Checking permissions...",
+            reply_to_message_id=user_message.message_id
+        )
 
-        # check ALLOWED_TELEGRAM_CHAT_IDS
-        if chat_id not in ALLOWED_TELEGRAM_CHAT_IDS:
-            reply = f"This bot is limited to certain chats only.\n" \
-                    f"Please ask the admin to add this chat ID to the list: {chat_id}"
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=reply,
-                reply_to_message_id=user_message.message_id
-            )
+        try:
+            is_allowed_chat = await self.is_this_chat_allowed(user_id, chat_id)
+        except Exception as e:
+            await main_reply.edit_text(f"Error checking permissions:\n{e}")
             return
 
+        if is_allowed_chat is not True:
+            reply = f"This bot is limited to certain chats only.\n" \
+                    f"Please ask the admin to add you to some private group " \
+                    f"or to add this chat ID to the list of allowed chats: {chat_id}"
+            await main_reply.edit_text(reply)
+            return
+
+        user_model = UserModel(user_id, DATA_DIR)
+        user_model.save_user_info(update.effective_user)
+
+        media_file = MediaFileModel(user_id, user_message.message_id, DATA_DIR)
         if user_message.audio is not None:
             media_file.original_file_id = user_message.audio.file_id
             media_file.original_file_duration_s = user_message.audio.duration
@@ -128,31 +167,13 @@ class TelegramService:
             media_file.original_file_type = "video note"
         elif user_message.forward_from_message_id is not None and user_message.forward_from_chat is not None:
             reply = "I don't know how to work with forwarded messages yet."
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=reply,
-                reply_to_message_id=user_message.message_id
-            )
+            await main_reply.edit_text(reply)
             return
         else:
             reply = "I don't recognize this media type.\n" \
                     "If you send me audio, voice or video, i'll transcribe it."
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=reply,
-                reply_to_message_id=user_message.message_id
-            )
+            await main_reply.edit_text(reply)
             return
-
-        # Check permissions
-        message_text = f"Checking permissions..."
-        main_reply = await context.bot.send_message(
-            chat_id=chat_id,
-            text=message_text,
-            reply_to_message_id=user_message.message_id
-        )
-        user_model = UserModel(user_id, DATA_DIR)
-        user_model.save_user_info(update.effective_user)
 
         # Download the file
         await main_reply.edit_text(f"Downloading {media_file.original_file_type}...")
