@@ -59,7 +59,19 @@ OPENAI_API_KEY="sk-***************************"
 EOF
 ```
 
-Run the server:
+Change users or groups that can use the bot in app/config.py. To get the user_id, ask that user to write something to
+the bot and the bot will reply with ID. The same with chats: you need to add the bot to the chat and then the bot will
+reply with chat_id.
+Example:
+
+```python 
+ALLOWED_TELEGRAM_CHAT_IDS = [
+    80660384,  # @skrpnk
+]
+```
+
+Run the server (server will continuously run in the background, so you might need to open another console to run other
+commands):
 
 ```bash
 bash start_telegram_server.sh
