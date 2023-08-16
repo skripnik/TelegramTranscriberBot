@@ -264,12 +264,14 @@ class TelegramService:
                     audio=audio,
                     title=f"Chunk {i + 1} of {chunks_found}",
                     performer="Transcription",
-                    disable_notification=True
+                    disable_notification=True,
+                    reply_to_message_id=None
                 )
 
             chunk_message = await main_reply.reply_text(
                 text=f"Transcribing chunk {i + 1} of {chunks_found}...",
                 disable_notification=True,
+                reply_to_message_id=None
             )
 
             try:
