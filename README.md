@@ -109,4 +109,5 @@ Navigate to the TelegramTranscriberBot directory and pull any recent updates fro
 ```bash
 cd TelegramTranscriberBot
 git pull
+pip install -r requirements.txt
 ```
