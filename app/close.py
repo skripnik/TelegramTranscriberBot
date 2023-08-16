@@ -10,4 +10,4 @@ if __name__ == '__main__':
 
     telegram_service = TelegramService()
     telegram_service.build_app(True)
-    asyncio.run(telegram_service.close_and_log_out())
+    asyncio.run(telegram_service.application.bot.close())

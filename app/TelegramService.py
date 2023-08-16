@@ -82,10 +82,6 @@ class TelegramService:
         else:
             print("User is already logged out.")
 
-    async def close_and_log_out(self):
-        await self.application.bot.close()
-        await self.log_out_if_logged_in()
-
     def run_polling(self):
         self.application.run_polling()
 
