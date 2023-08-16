@@ -49,4 +49,4 @@ if __name__ == '__main__':
     TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
     application = ApplicationBuilder().token(TELEGRAM_API_TOKEN).build()
     asyncio.run(log_out_if_logged_in(application.bot))
-    asyncio.run(application.bot.close())
+    # asyncio.run(application.bot.close())

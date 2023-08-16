@@ -1,5 +1,7 @@
 import os
 import json
+import shutil
+
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -77,3 +79,7 @@ class MediaFileModel:
 
         with open(self.transcription_file, "w") as file:
             file.write(rendered_template)
+
+    def delete(self):
+        if os.path.exists(self.folder):
+            shutil.rmtree(self.folder)

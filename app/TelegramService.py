@@ -105,36 +105,65 @@ class TelegramService:
             await main_reply.edit_text(f"Error saving file: {e}")
             return
 
-        original_file_location = media_file.original_file_location
-
         if media_file.original_file_duration_s <= MAX_CHUNK_DURATION_S:
-            # Can we send it right away to Whisper?
-            if WhisperTranscriber.validate_file(original_file_location):
-                await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
-                return
+            await self.handle_short_audio(media_file, main_reply)
+        else:
+            await self.handle_long_audio(media_file, main_reply)
 
-            # If not, let's try to convert it to mp3 and check it again
+        media_file.delete()
+
+    @staticmethod
+    async def handle_short_audio(media_file: MediaFileModel, main_reply: Message):
+        original_file_location = media_file.original_file_location
+        if WhisperTranscriber.validate_file(original_file_location):
+            audio_source = original_file_location
+        else:
             await main_reply.edit_text("Converting audio to MP3...")
             mp3_file_location = media_file.mp3_file
 
             try:
                 MediaConverter.convert_to_mp3(original_file_location, mp3_file_location)
             except Exception as e:
-                await main_reply.edit_text(f"Error converting file: {e}")
+                await main_reply.edit_text(f"Error converting file to MP3: {e}")
                 return
 
             if WhisperTranscriber.validate_file(mp3_file_location):
-                await self.handle_simple_audio(mp3_file_location, main_reply, user_message, media_file)
+                audio_source = mp3_file_location
+            else:
+                await main_reply.edit_text("Converted MP3 file is still not valid for Whisper.")
                 return
 
-        # Well, at this point let's split it into chunks
+        await main_reply.edit_text("Transcribing audio with Whisper...")
+        try:
+            transcription = WhisperTranscriber.transcribe_audio(audio_source)
+        except Exception as e:
+            await main_reply.edit_text(f"Error transcribing audio:\n{e}")
+            return
+
+        media_file.save_transcription([transcription])
+
+        if len(transcription) > MessageLimit.MAX_TEXT_LENGTH:
+            await main_reply.edit_text("Your transcription is ready:")
+            await main_reply.reply_document(
+                document=open(media_file.transcription_file, 'rb'),
+                caption=transcription[:TRANSCRIPTION_PREVIEW_CHARS] + "...",
+                reply_to_message_id=main_reply.reply_to_message.message_id
+            )
+        else:
+            await main_reply.edit_text(transcription)
+
+    @staticmethod
+    async def handle_long_audio(media_file: MediaFileModel, main_reply: Message):
+        transcriptions = []
+
         await main_reply.edit_text("Converting audio to WAV (PCM)...")
+        original_file_location = media_file.original_file_location
         pcm_wav_file_location = media_file.pcm_wav_file
 
         try:
             MediaConverter.convert_to_pcm_wav(original_file_location, pcm_wav_file_location)
         except Exception as e:
-            await main_reply.edit_text(f"Error converting file: {e}")
+            await main_reply.edit_text(f"Error converting file to WAV (PCM): {e}")
             return
 
         await main_reply.edit_text("Detecting speech...")
@@ -147,77 +176,46 @@ class TelegramService:
         chunks = ChunkProcessor.calculate_chunks(silero_timestamps, media_file.original_file_duration_s)
         chunks_found = len(chunks)
 
-        if chunks_found == 1:
-            await self.handle_simple_audio(original_file_location, main_reply, user_message, media_file)
+        await main_reply.edit_text(f"Splitting audio in {chunks_found} chunks...")
+        try:
+            ChunkProcessor.split_audio_into_chunks(chunks, media_file)
+        except Exception as e:
+            await main_reply.edit_text(f"Error splitting audio: {e}")
             return
-        else:
-            transcriptions = []
 
-            await main_reply.edit_text(f"Splitting audio in {chunks_found} chunks...")
-            try:
-                ChunkProcessor.split_audio_into_chunks(chunks, media_file)
-            except Exception as e:
-                await main_reply.edit_text(f"Error splitting audio: {e}")
-                return
+        await main_reply.edit_text(f"Transcribing {chunks_found} chunks:")
 
-            await main_reply.edit_text(f"Transcribing {chunks_found} chunks:")
-
-            for i in range(chunks_found):
-                chunk_path = media_file.get_chunk_location(i)
-                with open(chunk_path, 'rb') as audio:
-                    await context.bot.send_audio(
-                        chat_id=chat_id,
-                        audio=audio,
-                        title=f"Chunk {i + 1} of {chunks_found}",
-                        performer="Transcription",
-                        disable_notification=True,
-                        write_timeout=60
-                    )
-
-                chunk_message = await context.bot.send_message(
-                    chat_id=chat_id,
-                    text=f"Transcribing chunk {i + 1} of {chunks_found}...",
-                    disable_notification=True,
+        for i in range(chunks_found):
+            chunk_path = media_file.get_chunk_location(i)
+            with open(chunk_path, 'rb') as audio:
+                await main_reply.reply_audio(
+                    audio=audio,
+                    title=f"Chunk {i + 1} of {chunks_found}",
+                    performer="Transcription",
+                    disable_notification=True
                 )
 
-                try:
-                    transcription = WhisperTranscriber.transcribe_audio(chunk_path)
-                except Exception as e:
-                    await chunk_message.edit_text(f"Error transcribing chunk {i + 1} of {chunks_found}: {e}")
-                    return
-
-                transcriptions.append(transcription)
-                await chunk_message.edit_text(transcription)
-
-            media_file.save_transcription(transcriptions)
-
-            await main_reply.reply_document(
-                document=open(media_file.transcription_file, 'rb'),
-                caption=transcriptions[0][:TRANSCRIPTION_PREVIEW_CHARS] + "...",
-                reply_to_message_id=user_message.message_id
+            chunk_message = await main_reply.reply_text(
+                text=f"Transcribing chunk {i + 1} of {chunks_found}...",
+                disable_notification=True,
             )
 
-    @staticmethod
-    async def handle_simple_audio(original_file_location: str, reply_message: Message, user_message: Message,
-                                  media_file: MediaFileModel):
-        await reply_message.edit_text("Transcribing audio...")
-        try:
-            transcription = WhisperTranscriber.transcribe_audio(original_file_location)
-        except Exception as e:
-            await reply_message.edit_text(f"Error transcribing audio: {e}")
-            return
+            try:
+                transcription = WhisperTranscriber.transcribe_audio(chunk_path)
+            except Exception as e:
+                await chunk_message.edit_text(f"Error transcribing chunk {i + 1} of {chunks_found}: {e}")
+                return
 
-        media_file.save_transcription([transcription])
+            transcriptions.append(transcription)
+            await chunk_message.edit_text(transcription)
 
-        if len(transcription) > MessageLimit.MAX_TEXT_LENGTH:
-            await reply_message.edit_text("Your transcription is ready:")
-            await reply_message.reply_document(
-                document=open(media_file.transcription_file, 'rb'),
-                caption=transcription[:TRANSCRIPTION_PREVIEW_CHARS] + "...",
-                reply_to_message_id=user_message.message_id
-            )
-        else:
-            await reply_message.edit_text(transcription)
+        media_file.save_transcription(transcriptions)
+
+        await main_reply.reply_document(
+            document=open(media_file.transcription_file, 'rb'),
+            caption=transcriptions[0][:TRANSCRIPTION_PREVIEW_CHARS] + "...",
+            reply_to_message_id=main_reply.reply_to_message.message_id
+        )
 
     def setup(self):
         start_handler = CommandHandler('start', self.start)
