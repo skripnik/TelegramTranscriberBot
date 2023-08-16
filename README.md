@@ -77,3 +77,10 @@ Run the bot:
 ```bash
 python3 app/main.py
 ```
+
+## Updates
+
+```bash
+cd TelegramTranscriberBot
+git pull
+```
