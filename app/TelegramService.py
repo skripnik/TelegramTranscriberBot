@@ -1,17 +1,93 @@
-from telegram import Update, Message
-from telegram.ext import MessageHandler, filters, ContextTypes, CommandHandler
+import os
+
+from dotenv import load_dotenv
+from telegram import Update, Message, User
+from telegram.error import BadRequest
+from telegram.ext import MessageHandler, filters, ContextTypes, CommandHandler, AIORateLimiter, ApplicationBuilder
 from telegram.constants import MessageLimit
 from ChunkProcessor import ChunkProcessor
 from MediaConverter import MediaConverter
 from models.MediaFileModel import MediaFileModel
 from WhisperTranscriber import WhisperTranscriber
 from models.UserModel import UserModel
-from config import ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, MAX_CHUNK_DURATION_S, DATA_DIR
+from config import ALLOWED_TELEGRAM_CHAT_IDS, TRANSCRIPTION_PREVIEW_CHARS, MAX_CHUNK_DURATION_S, DATA_DIR, \
+    TELEGRAM_BASE_URL, TELEGRAM_BASE_FILE_URL
 
 
 class TelegramService:
-    def __init__(self, application):
+    def __init__(self):
+        load_dotenv()
+        self.TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
+        self.application = None
+
+    def build_app(self, local_mode: bool):
+        application_builder = ApplicationBuilder()
+        application_builder.token(self.TELEGRAM_API_TOKEN)
+
+        if local_mode:
+            application_builder.base_url(TELEGRAM_BASE_URL)
+            application_builder.base_file_url(TELEGRAM_BASE_FILE_URL)
+            application_builder.local_mode(True)
+        else:
+            application_builder.local_mode(False)
+
+        application_builder.read_timeout(30)
+        application_builder.write_timeout(30)
+        application_builder.connect_timeout(30)
+        application_builder.pool_timeout(30)
+
+        rate_limiter = AIORateLimiter(
+            overall_max_rate=30,
+            overall_time_period=1,
+            group_max_rate=20,
+            group_time_period=60,
+            max_retries=3,
+        )
+
+        application_builder.rate_limiter(rate_limiter)
+        application = application_builder.build()
+
         self.application = application
+
+    async def log_out(self) -> bool:
+        return await self.application.bot.log_out()
+
+    async def check_if_logged_in(self) -> bool:
+        try:
+            user = await self.application.bot.get_me()
+        except BadRequest:
+            return False
+
+        if isinstance(user, User):
+            return True
+        elif user is None:
+            return False
+        else:
+            raise Exception("An error occurred while trying to get the bot's user.")
+
+    async def log_out_if_logged_in(self):
+        logged_in = await self.check_if_logged_in()
+
+        if logged_in:
+            print("User is logged in. Logging out...")
+            await self.log_out()
+
+            print("Checking if logged out out...")
+            logged_in = await self.check_if_logged_in()
+
+            if not logged_in:
+                print("Logged out successfully.")
+            else:
+                raise Exception("An error occurred while trying to log out.")
+        else:
+            print("User is already logged out.")
+
+    async def close_and_log_out(self):
+        await self.application.bot.close()
+        await self.log_out_if_logged_in()
+
+    def run_polling(self):
+        self.application.run_polling()
 
     @staticmethod
     async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -223,5 +299,3 @@ class TelegramService:
 
         audio_handler = MessageHandler(~filters.COMMAND, self.message)
         self.application.add_handler(audio_handler)
-
-        return self
