@@ -1,4 +1,8 @@
-# Installation
+# Telegram Transcriber Bot
+
+Send to the bot an audio or video file, and it will send you transcription. It uses OpenAI Whisper API under the hood.
+
+## Installation
 
 You will need a server with root access. For the installation process, it's recommended to resize your server to at
 least 4GB RAM and 2 CPUs. The higher the configuration, the faster the installation can be completed. After
@@ -48,7 +52,8 @@ sudo apt install ffmpeg
 
 **5. Obtain Required Access Keys:**
 
-- Register your Telegram Bot using [@BotFather](https://t.me/botfather), get the `api_token` and disable the bot privacy mode.
+- Register your Telegram Bot using [@BotFather](https://t.me/botfather), get the `api_token` and disable the bot privacy
+  mode.
 - Create a Telegram app to obtain your `api_id` and `api_hash`. Here's a
   useful [Tutorial](https://core.telegram.org/api/obtaining_api_id) for that.
 - Register on OpenAI Platform to get
@@ -111,3 +116,16 @@ cd TelegramTranscriberBot
 git pull
 pip install -r requirements.txt
 ```
+
+## Acknowledgements
+
+This project was sparked and partly developed during the hackathon Internet Without
+Borders (https://internetborders.net/). We wholeheartedly express our gratitude to the organizers and sponsors of the
+event for providing us with an enriching and encouraging platform where we could contribute our ideas and execute their
+practical implications.
+
+## License
+
+This project is open-source under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). While we aim to
+provide a faultless and optimized system, in the event of any inconsistencies or issues resulting from the use of this
+code, the authors and project contributors will not be liable for any damages incurred.
