@@ -316,5 +316,6 @@ class TelegramService:
         start_handler = CommandHandler('start', self.start)
         self.application.add_handler(start_handler)
 
-        audio_handler = MessageHandler(~filters.COMMAND, self.message)
+        audio_handler = MessageHandler(
+            filters.AUDIO | filters.VIDEO | filters.VOICE | filters.VIDEO_NOTE | filters.TEXT, self.message)
         self.application.add_handler(audio_handler)
