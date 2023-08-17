@@ -1,6 +1,7 @@
 # Telegram Transcriber Bot
 
-Send to the bot an audio or video file, and it will send you transcription. It uses OpenAI Whisper API under the hood.
+Send an audio or video file to the bot, and it will send you a transcription. It uses the OpenAI Whisper API under the
+hood.
 
 ## Installation
 
@@ -8,7 +9,7 @@ You will need a server with root access. For the installation process, it's reco
 least 4GB RAM and 2 CPUs. The higher the configuration, the faster the installation can be completed. After
 installation, you can resize the server back to the original configuration.
 
-The code samples provided are for Ubuntu. Please take note that different systems may require different commands.
+The code samples provided are for Ubuntu. Please note that different systems may require different commands.
 
 **1. Update the System**
 
@@ -73,19 +74,7 @@ OPENAI_API_KEY="your_openai_api_key"
 EOF
 ```
 
-**7. Update user permissions**
-
-Update the list of users and groups that can use the bot in `app/config.py`. To obtain the `user_id`, have the user
-message the bot, and the bot will reply with the ID. Do the same with chats, by adding the bot to the chat as
-administrator, write something, and it will reply with the chat_id. Here's an example:
-
-```python 
-ALLOWED_TELEGRAM_CHAT_IDS = [
-    -1111111111111,
-]
-```
-
-**8. Start the Server**
+**7. Start the Server**
 
 Run the server using the following command. Note that the server will run continuously in the background. You might need
 to open another console for running additional commands:
@@ -94,14 +83,39 @@ to open another console for running additional commands:
 bash start_telegram_server.sh
 ```
 
-**9. Install Python, pip and Required Dependencies**
+**8. Install Python, pip and Required Dependencies**
 
 ```bash
 sudo apt install python3 python3-pip
 pip install -r requirements.txt
 ```
 
-**10. Run the Bot**
+**9. Run the Bot**
+
+```bash
+python3 app/main.py
+```
+
+**10. Create a Telegram group to manage users**
+By default, the bot will reject any commands. To allow commands:
+
+- Create a Telegram group (only users in this group will be allowed to use the bot)
+- Add the bot to the group
+- Promote the bot to administrator
+- Send any message to the group
+- The bot will reply with the group_id
+
+**11. Update allowed groups in config**
+Update the list of users and groups that can use the bot in `app/config.py`. Use the group_id from the previous step.
+
+```python 
+ALLOWED_TELEGRAM_CHAT_IDS = [
+    -1111111111111,
+]
+```
+
+**12. Restart the bot (main.py)**
+Stop the python script running (usually Ctrl+C) and start it again:
 
 ```bash
 python3 app/main.py
@@ -119,13 +133,10 @@ pip install -r requirements.txt
 
 ## Acknowledgements
 
-This project was sparked and partly developed during the hackathon Internet Without
-Borders (https://internetborders.net/). We wholeheartedly express our gratitude to the organizers and sponsors of the
-event for providing us with an enriching and encouraging platform where we could contribute our ideas and execute their
-practical implications.
+This project was initiated and partially developed during the [Internet Without Borders](https://internetborders.net/)
+hackathon. We extend our sincere thanks to the event's organizers and sponsors for their support and encouragement.
 
 ## License
 
-This project is open-source under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). While we aim to
-provide a faultless and optimized system, in the event of any inconsistencies or issues resulting from the use of this
-code, the authors and project contributors will not be liable for any damages incurred.
+This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). The authors and
+contributors are not liable for any damages arising from the use of this code.
