@@ -80,6 +80,7 @@ Run the server using the following command. Note that the server will run contin
 to open another console for running additional commands:
 
 ```bash
+screen
 bash start_telegram_server.sh
 ```
 
@@ -115,9 +116,11 @@ ALLOWED_TELEGRAM_CHAT_IDS = [
 ```
 
 **12. Restart the bot (main.py)**
-Stop the python script running (usually Ctrl+C) and start it again:
+Stop the python script running (usually Ctrl+C) and start it again. This time we usi it with screen, so that it will
+continue running even if the SSH session is closed.
 
 ```bash
+screen
 python3 app/main.py
 ```
 
