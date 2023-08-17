@@ -1,7 +1,13 @@
 # Telegram Transcriber Bot
 
 Send an audio or video file to the bot, and it will send you a transcription. It uses the OpenAI Whisper API under the
-hood.
+hood, so it works with many languages:
+
+Afrikaans, Arabic, Armenian, Azerbaijani, Belarusian, Bosnian, Bulgarian, Catalan, Chinese, Croatian, Czech, Danish,
+Dutch, English, Estonian, Finnish, French, Galician, German, Greek, Hebrew, Hindi, Hungarian, Icelandic, Indonesian,
+Italian, Japanese, Kannada, Kazakh, Korean, Latvian, Lithuanian, Macedonian, Malay, Marathi, Maori, Nepali, Norwegian,
+Persian, Polish, Portuguese, Romanian, Russian, Serbian, Slovak, Slovenian, Spanish, Swahili, Swedish, Tagalog, Tamil,
+Thai, Turkish, Ukrainian, Urdu, Vietnamese, and Welsh.
 
 ## Installation
 
