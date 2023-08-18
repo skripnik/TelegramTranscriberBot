@@ -8,8 +8,8 @@ services:
   server:
     image: ghcr.io/bots-house/docker-telegram-bot-api:latest
     environment: 
-      TELEGRAM_API_ID: ****************
-      TELEGRAM_API_HASH: ******************************
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
     command: 
       - --dir=/var/lib/telegram-bot-api
       - --verbosity=2
