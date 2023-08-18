@@ -10,7 +10,7 @@ TELEGRAM_BASE_URL = "http://localhost:8081/bot"
 TELEGRAM_BASE_FILE_URL = "http://localhost:8081/file/bot"
 
 ALLOWED_TELEGRAM_CHAT_IDS = [
-    -1001685642492,  # testing group with hackathon participants
-    -1001985729384,  # private group with @UgaChaka
+    00000000,  # you can set individual chat ids here
+    -000000000000,  # and also group chat ids, then all members of the group can use the bot
 ]
 MEMBER_LIST_CACHE_TIME_SECONDS = 300  # 5 minutes
