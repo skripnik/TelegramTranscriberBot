@@ -1,9 +1,11 @@
+import asyncio
 import logging
 import os
 
 from dotenv import load_dotenv
+from telegram import Bot
 
-from TelegramService import TelegramService
+from app.TelegramService import TelegramService
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -14,7 +16,7 @@ if __name__ == "__main__":
     load_dotenv()
     telegram_api_token: str = os.getenv("TELEGRAM_API_TOKEN")
     telegram_service = TelegramService(
-        telegram_api_token=telegram_api_token,
-        local_mode=True
+        telegram_api_token=telegram_api_token, local_mode=True
     )
-    telegram_service.setup_handlers()
+    bot: Bot = telegram_service.bot
+    asyncio.run(bot.close())
