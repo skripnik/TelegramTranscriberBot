@@ -142,7 +142,7 @@ class TelegramService:
             "I don't recognize text messages.\n"
             "If you send me audio, voice or video, i'll transcribe it."
         )
-        await update.message.reply_text(reply)
+        await main_reply.edit_text(reply)
 
     async def _handle_forwarded_message(
         self, update: Update, context: CallbackContext
@@ -152,7 +152,7 @@ class TelegramService:
             return
 
         reply = "I don't know how to work with forwarded messages yet."
-        await update.message.reply_text(reply)
+        await main_reply.edit_text(reply)
 
     async def _handle_media(self, update: Update, context: CallbackContext) -> None:
         # Check permissions
