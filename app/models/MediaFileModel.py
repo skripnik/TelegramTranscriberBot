@@ -24,7 +24,9 @@ class MediaFileModel:
         self.original_file_location = f"{self.folder}/original"
 
         if self.original_file_extension:
-            self.original_file_location = f"{self.original_file_location}.{self.original_file_extension}"
+            self.original_file_location = (
+                f"{self.original_file_location}.{self.original_file_extension}"
+            )
 
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
@@ -47,8 +49,8 @@ class MediaFileModel:
         formatted_lines = []
 
         for timestamps in silero_timestamps:
-            start_time = format(timestamps['start'], '.3f')
-            end_time = format(timestamps['end'], '.3f')
+            start_time = format(timestamps["start"], ".3f")
+            end_time = format(timestamps["end"], ".3f")
             label = "speech"
             formatted_line = f"{start_time}\t{end_time}\t{label}"
             formatted_lines.append(formatted_line)
@@ -60,8 +62,8 @@ class MediaFileModel:
         formatted_lines = []
 
         for chunk in chunks:
-            start_time = format(chunk[0], '.3f')
-            end_time = format(chunk[1], '.3f')
+            start_time = format(chunk[0], ".3f")
+            end_time = format(chunk[1], ".3f")
             label = "chunk"
             formatted_line = f"{start_time}\t{end_time}\t{label}"
             formatted_lines.append(formatted_line)
@@ -71,15 +73,15 @@ class MediaFileModel:
 
     def save_transcription(self, paragraphs: list):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        view_path = os.path.join(dir_path, '..', 'views')
+        view_path = os.path.join(dir_path, "..", "views")
         env = Environment(loader=FileSystemLoader(view_path))
-        template = env.get_template('transcription_template.html')
+        template = env.get_template("transcription_template.html")
 
         rendered_template = template.render(paragraphs=paragraphs)
 
         with open(self.transcription_file, "w") as file:
             file.write(rendered_template)
 
-    def delete(self):
+    def destroy(self):
         if os.path.exists(self.folder):
             shutil.rmtree(self.folder)

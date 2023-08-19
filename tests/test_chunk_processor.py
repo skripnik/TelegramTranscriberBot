@@ -1,10 +1,10 @@
-from app.ChunkProcessor import ChunkProcessor
+from app.chunk_processor import detect_timestamps
 
 
 def test_silero_timestamps():
     audio_file_path = f"test_files/chekhov.wav"
 
-    silero_timestamps = ChunkProcessor.detect_timestamps(audio_file_path)
+    silero_timestamps = detect_timestamps(audio_file_path)
 
     assert len(silero_timestamps) > 0
 

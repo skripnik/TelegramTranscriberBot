@@ -3,6 +3,7 @@ import os
 
 from telegram import User
 
+
 class UserModel:
     def __init__(self, user_id, data_dir: str):
         self.folder = f"{data_dir}/{user_id}"

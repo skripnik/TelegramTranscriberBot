@@ -4,13 +4,6 @@ import openai
 import os
 from dotenv import load_dotenv
 
-# load environment variables
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# set OPENAI_API_KEY as OpenAI key
-openai.api_key = OPENAI_API_KEY
-
 
 class WhisperTranscriber:
     SUPPORTED_EXTENSIONS = ['m4a', 'mp3', 'webm', 'mp4', 'mpga', 'wav', 'mpeg', 'ogg', 'oga', 'flac']
@@ -38,6 +31,9 @@ class WhisperTranscriber:
 
     @staticmethod
     def transcribe_audio(audio_file_path) -> str:
+        load_dotenv()
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+
         if not WhisperTranscriber.validate_file(audio_file_path):
             raise Exception("The provided file is not valid.")
 
@@ -51,5 +47,4 @@ class WhisperTranscriber:
                     time.sleep(WhisperTranscriber.RETRY_DELAY)
                     continue
                 else:
-                    print(e)
                     raise Exception(f"An exception occurred while trying to transcribe the audio: {e}")
