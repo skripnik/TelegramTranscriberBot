@@ -1,6 +1,6 @@
 import ffmpeg
 
-from config import WAV_SAMPLING_RATE
+from app.config import WAV_SAMPLING_RATE
 
 
 def convert_to_mp3(input_file_location: str, output_file_location: str) -> None:

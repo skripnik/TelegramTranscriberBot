@@ -9,7 +9,7 @@ from telegram.ext import (
     CallbackContext,
 )
 from app.TelegramTask import TelegramTask
-from config import TELEGRAM_BASE_URL, TELEGRAM_BASE_FILE_URL
+from app.config import TELEGRAM_BASE_URL, TELEGRAM_BASE_FILE_URL
 
 
 class TelegramService:
