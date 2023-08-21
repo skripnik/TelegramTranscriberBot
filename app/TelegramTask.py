@@ -138,7 +138,12 @@ class TelegramTask:
             media_file.original_file_type = "video note"
         elif user_message.document is not None:
             media_file.original_file_id = user_message.document.file_id
+            media_file.original_file_duration_s = None
             media_file.original_file_type = "document"
+
+        await self.download_file(media_file)
+
+        if media_file.original_file_duration_s is None:
             try:
                 media_file.original_file_duration_s = get_duration(
                     media_file.original_file_location
@@ -148,8 +153,6 @@ class TelegramTask:
                     f"⚠️ Error getting duration of audio in the document:\n{e}"
                 )
                 return
-
-        await self.download_file(media_file)
 
         if media_file.original_file_duration_s <= MAX_CHUNK_DURATION_S:
             await self._transcribe_short_audio(media_file)
