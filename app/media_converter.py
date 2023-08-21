@@ -23,3 +23,11 @@ def convert_to_pcm_wav(input_file_location: str, output_file_location: str) -> N
         output_file_location, format="wav", acodec="pcm_s16le", ar=WAV_SAMPLING_RATE
     )
     output_file.run(overwrite_output=True)
+
+
+def get_duration(input_file_location: str) -> int:
+    probe = ffmpeg.probe(input_file_location)
+    stream = next(
+        (stream for stream in probe["streams"] if stream["codec_type"] == "audio"), None
+    )
+    return int(float(stream["duration"]))

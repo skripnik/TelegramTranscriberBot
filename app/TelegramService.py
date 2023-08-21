@@ -62,7 +62,11 @@ class TelegramService:
         )
 
         media_handler = MessageHandler(
-            filters.AUDIO | filters.VIDEO | filters.VOICE | filters.VIDEO_NOTE,
+            filters.AUDIO
+            | filters.VIDEO
+            | filters.VOICE
+            | filters.VIDEO_NOTE
+            | filters.Document.ALL,
             self._handle_media,
         )
 

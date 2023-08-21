@@ -9,7 +9,7 @@ from app.chunk_processor import (
     split_audio_into_chunks,
 )
 from app.config import DATA_DIR, MAX_CHUNK_DURATION_S, TRANSCRIPTION_PREVIEW_CHARS
-from app.media_converter import convert_to_mp3, convert_to_pcm_wav
+from app.media_converter import convert_to_mp3, convert_to_pcm_wav, get_duration
 from app.models.MediaFileModel import MediaFileModel
 from app.models.UserModel import UserModel
 
@@ -136,6 +136,18 @@ class TelegramTask:
             media_file.original_file_id = user_message.video_note.file_id
             media_file.original_file_duration_s = user_message.video_note.duration
             media_file.original_file_type = "video note"
+        elif user_message.document is not None:
+            media_file.original_file_id = user_message.document.file_id
+            media_file.original_file_type = "document"
+            try:
+                media_file.original_file_duration_s = get_duration(
+                    media_file.original_file_location
+                )
+            except Exception as e:
+                await self.set_first_reply(
+                    f"⚠️ Error getting duration of audio in the document:\n{e}"
+                )
+                return
 
         await self.download_file(media_file)
 
