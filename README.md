@@ -100,7 +100,7 @@ pip install -r requirements.txt
 **9. Run the Bot**
 
 ```bash
-python3 app/main.py
+PYTHONPATH="${PYTHONPATH}:$(pwd)" python3 app/main.py
 ```
 
 **10. Create a Telegram group to manage users**
@@ -127,7 +127,7 @@ continue running even if the SSH session is closed.
 
 ```bash
 screen
-python3 app/main.py
+PYTHONPATH="${PYTHONPATH}:$(pwd)" python3 app/main.py
 ```
 
 ## Updates

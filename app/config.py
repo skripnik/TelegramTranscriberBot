@@ -11,6 +11,6 @@ TELEGRAM_BASE_FILE_URL = "http://localhost:8081/file/bot"
 
 ALLOWED_TELEGRAM_CHAT_IDS = [
     80660384,  # you can set individual chat ids here
-    -000000000000,  # and also group chat ids, then all members of the group can use the bot
+    -1001685642492,  # and also group chat ids, then all members of the group can use the bot
 ]
 MEMBER_LIST_CACHE_TIME_SECONDS = 300  # 5 minutes
