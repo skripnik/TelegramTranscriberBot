@@ -1,6 +1,7 @@
 FROM python:3.10-slim
 
 WORKDIR /home/tgbot
+ENV PYTHONPATH="/home/tgbot"
 
 COPY requirements.txt requirements.txt
 
@@ -12,9 +13,4 @@ RUN apt update && \
 
 COPY ./ /home/tgbot/
 
-# terrible temp solution
-COPY ".env" ".env"
-
-WORKDIR /home/tgbot/app
-
-CMD ["python", "main.py"]
+CMD ["python", "app/main.py"]

@@ -1,22 +1,24 @@
 version: '3.8'
 
 volumes:
-  server-data: 
+  server-data:
     driver: local
 
 services:
   server:
     image: ghcr.io/bots-house/docker-telegram-bot-api:latest
-    environment: 
+    environment:
       TELEGRAM_API_ID: ${TELEGRAM_API_ID}
       TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
-    command: 
+    command:
       - --dir=/var/lib/telegram-bot-api
       - --verbosity=2
-    volumes: 
+    volumes:
       - server-data:/var/lib/telegram-bot-api
     ports:
       - 8081:8081
+    networks:
+      tgbot:
 
   app: # New service
     image: telegram_bot:latest
@@ -27,3 +29,8 @@ services:
       SERVER_URL: http://server:8081
     ports:
       - 8000:8000 # Assuming your app runs on port 8000, modify accordingly
+    networks:
+      tgbot:
+
+networks:
+  tgbot:
