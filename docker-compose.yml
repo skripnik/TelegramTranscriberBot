@@ -2,7 +2,6 @@ version: '3.8'
 
 volumes:
   server-data:
-    driver: local
 
 services:
   server:
@@ -28,10 +27,12 @@ services:
       # If your application uses environment variables to know where to connect, set them here
       SERVER_URL: http://server:8081
       TELEGRAM_BASE_URL: http://server:8081/bot
-      TELEGRAM_BASE_FILE_URL: http://server:8081/file/
+      TELEGRAM_BASE_FILE_URL: file://mnt/
       TELEGRAM_ALLOWED_IDS: ${TELEGRAM_ALLOWED_IDS}
       OPENAI_API_KEY: ${TELEGRAM_OPENAI_API_KEY}
       TELEGRAM_API_TOKEN: ${TELEGRAM_API_TOKEN}
+    volumes:
+      - server-data:/mnt
     ports:
       - 8000:8000 # Assuming your app runs on port 8000, modify accordingly
     networks:
