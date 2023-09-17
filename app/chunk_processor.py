@@ -2,7 +2,7 @@ import ffmpeg
 import torch
 
 from models.MediaFileModel import MediaFileModel
-from config import WAV_SAMPLING_RATE, MAX_CHUNK_DURATION_S, MIN_CHUNK_DURATION_S
+from app.config import WAV_SAMPLING_RATE, MAX_CHUNK_DURATION_S, MIN_CHUNK_DURATION_S
 
 
 def detect_timestamps(pcm_wav_file) -> list:
