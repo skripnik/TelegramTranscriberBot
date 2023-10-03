@@ -1,1 +1,4 @@
 .env
+*.log
+/home/tgbot/telegram-bot-api/*
+!/home/tgbot/telegram-bot-api/bin/
