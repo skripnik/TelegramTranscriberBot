@@ -70,16 +70,16 @@ class TelegramTask:
             f"Send me an audio, voice or video and I'll transcribe it for you."
         )
 
-#     async def handle_text_message(self) -> None:
-#         await self.set_first_reply(
-#             "⚠️ I don't know what to do with text messages. "
-#             "If you send me audio, voice or video, i'll transcribe it."
-#         )
-#
-#     async def handle_forwarded_message(self) -> None:
-#         await self.set_first_reply(
-#             "⚠️ I don't know how to work with forwarded messages yet."
-#         )
+    async def handle_text_message(self) -> None:
+        await self.set_first_reply(
+            "⚠️ I don't know what to do with text messages. "
+            "If you send me audio, voice or video, i'll transcribe it."
+        )
+
+    async def handle_forwarded_message(self) -> None:
+        await self.set_first_reply(
+            "⚠️ I don't know how to work with forwarded messages yet."
+        )
 
     async def download_file(self, media_file: MediaFileModel) -> None:
         await self.set_first_reply(f"📥 Downloading {media_file.original_file_type}...")
