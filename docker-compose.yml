@@ -6,6 +6,7 @@ volumes:
 services:
   app: # New service
     image: telegram_bot:latest
+    restart: unless-stopped
     environment:
       # If your application uses environment variables to know where to connect, set them here
 #      SERVER_URL: http://server:8081
