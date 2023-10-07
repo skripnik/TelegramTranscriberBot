@@ -71,7 +71,7 @@ class TelegramService:
         )
 
         self.application.add_handlers(
-            [start_handler, media_handler, text_handler, forwarded_handler]
+            [start_handler, media_handler] # ,text_handler, forwarded_handler]
         )
 
         self.application.run_polling()

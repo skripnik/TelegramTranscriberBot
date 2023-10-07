@@ -4,39 +4,21 @@ volumes:
   server-data:
 
 services:
-  server:
-    image: ghcr.io/bots-house/docker-telegram-bot-api:latest
-    environment:
-      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
-      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
-    command:
-      - --dir=/var/lib/telegram-bot-api
-      - --verbosity=2
-    volumes:
-      - server-data:/var/lib/telegram-bot-api
-    ports:
-      - 8081:8081
-    networks:
-      tgbot:
-
   app: # New service
     image: telegram_bot:latest
-    depends_on:
-      - server
+    restart: unless-stopped
     environment:
       # If your application uses environment variables to know where to connect, set them here
-      SERVER_URL: http://server:8081
-      TELEGRAM_BASE_URL: http://server:8081/bot
-      TELEGRAM_BASE_FILE_URL: file://mnt/
+#      SERVER_URL: http://server:8081
+#      TELEGRAM_BASE_URL: http://server:8081/bot
+#      TELEGRAM_BASE_FILE_URL: http://server:8081/file/bot
       TELEGRAM_ALLOWED_IDS: ${TELEGRAM_ALLOWED_IDS}
       OPENAI_API_KEY: ${TELEGRAM_OPENAI_API_KEY}
       TELEGRAM_API_TOKEN: ${TELEGRAM_API_TOKEN}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
     volumes:
       - server-data:/mnt
     ports:
-      - 8000:8000 # Assuming your app runs on port 8000, modify accordingly
-    networks:
-      tgbot:
+      - 8081:8081 # Assuming your app runs on port 8000, modify accordingly
 
-networks:
-  tgbot:
