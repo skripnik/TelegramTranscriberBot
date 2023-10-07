@@ -113,12 +113,10 @@ By default, the bot will reject any commands. To allow commands:
 - The bot will reply with the group_id
 
 **11. Update allowed groups in config**
-Update the list of users and groups that can use the bot in `app/config.py`. Use the group_id from the previous step.
+Add the list of users and groups that can use the bot in `.env` file. Use the group_id from the previous step. Example:
 
-```python 
-ALLOWED_TELEGRAM_CHAT_IDS = [
-    -1111111111111,
-]
+```bash 
+TELEGRAM_ALLOWED_IDS = "1223456,-1111111111111"
 ```
 
 **12. Restart the bot (main.py)**
