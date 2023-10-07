@@ -26,7 +26,10 @@ class TelegramPermissionChecker:
         return group_id in self.always_allowed_chat_ids
 
     async def is_user_allowed(self, user_id: int) -> bool:
-        if user_id in self.temporary_allowed_user_ids:
+        if (
+            user_id in self.temporary_allowed_user_ids
+            or user_id in ALLOWED_TELEGRAM_CHAT_IDS
+        ):
             return True
 
         for chat_id in ALLOWED_TELEGRAM_CHAT_IDS:
